@@ -24,16 +24,26 @@ export async function unfollowUserController(request: Request, response: Respons
 
 export async function listFollowingController(request: Request, response: Response) {
   const userId = getAuthenticatedUserId(request);
-  const follows = await followService.listFollowing(userId);
+  const page = normalizePositiveInt(request.query.page, 1);
+  const limit = normalizePositiveInt(request.query.limit, 24, 100);
+  const follows = await followService.listFollowing(userId, { page, limit });
 
-  return response.json(follows.map(toFollowResponse));
+  return response.json({
+    ...follows,
+    items: follows.items.map(toFollowResponse),
+  });
 }
 
 export async function listFollowersController(request: Request, response: Response) {
   const userId = getAuthenticatedUserId(request);
-  const follows = await followService.listFollowers(userId);
+  const page = normalizePositiveInt(request.query.page, 1);
+  const limit = normalizePositiveInt(request.query.limit, 24, 100);
+  const follows = await followService.listFollowers(userId, { page, limit });
 
-  return response.json(follows.map(toFollowResponse));
+  return response.json({
+    ...follows,
+    items: follows.items.map(toFollowResponse),
+  });
 }
 
 function getAuthenticatedUserId(request: Request): string {
@@ -53,4 +63,18 @@ function toFollowResponse(follow: { id: string; followerId: string; followedId: 
     followedId: follow.followedId,
     createdAt: follow.createdAt.toISOString(),
   };
+}
+
+function normalizePositiveInt(value: unknown, fallback: number, max = Number.MAX_SAFE_INTEGER) {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback;
+  }
+
+  return Math.min(parsed, max);
 }

@@ -32,24 +32,44 @@ export class FollowRepository {
     });
   }
 
-  listFollowing(followerId: string) {
+  listFollowing(followerId: string, { skip, take }: { skip: number; take: number }) {
     return prisma.follow.findMany({
       where: {
         followerId,
       },
+      skip,
+      take,
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  listFollowers(followedId: string) {
+  countFollowing(followerId: string) {
+    return prisma.follow.count({
+      where: {
+        followerId,
+      },
+    });
+  }
+
+  listFollowers(followedId: string, { skip, take }: { skip: number; take: number }) {
     return prisma.follow.findMany({
       where: {
         followedId,
       },
+      skip,
+      take,
       orderBy: {
         createdAt: 'desc',
+      },
+    });
+  }
+
+  countFollowers(followedId: string) {
+    return prisma.follow.count({
+      where: {
+        followedId,
       },
     });
   }

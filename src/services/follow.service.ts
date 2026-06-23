@@ -42,11 +42,34 @@ export class FollowService {
     await followRepository.delete(followerId, followedId);
   }
 
-  listFollowing(userId: string) {
-    return followRepository.listFollowing(userId);
+  async listFollowing(userId: string, { page, limit }: { page: number; limit: number }) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      followRepository.listFollowing(userId, { skip, take: limit }),
+      followRepository.countFollowing(userId),
+    ]);
+
+    return toPaginatedResponse(items, page, limit, total);
   }
 
-  listFollowers(userId: string) {
-    return followRepository.listFollowers(userId);
+  async listFollowers(userId: string, { page, limit }: { page: number; limit: number }) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      followRepository.listFollowers(userId, { skip, take: limit }),
+      followRepository.countFollowers(userId),
+    ]);
+
+    return toPaginatedResponse(items, page, limit, total);
   }
+}
+
+function toPaginatedResponse<T>(items: T[], page: number, limit: number, total: number) {
+  return {
+    items,
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    hasNextPage: page * limit < total,
+  };
 }
